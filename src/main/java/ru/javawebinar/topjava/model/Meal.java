@@ -1,19 +1,34 @@
 package ru.javawebinar.topjava.model;
 
-import javax.persistence.FetchType;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+@NamedQueries({
+        @NamedQuery(name = Meal.DELETE, query = "DELETE FROM Meal m WHERE m.id=:id AND m.user.id=:userId"),
+        @NamedQuery(name = Meal.ALL_SORTED, query = "SELECT m FROM Meal m LEFT JOIN FETCH m.user WHERE m.user.id=:userId ORDER BY m.dateTime"),
+        @NamedQuery(name = Meal.ALL_BETWEEN_TIMES_AND_SORTED,
+                query = "SELECT m FROM Meal m LEFT JOIN FETCH m.user WHERE m.user.id=:userId AND m.dateTime>=:startTime AND m.dateTime<=:endTime ORDER BY m.dateTime")
+})
+@Entity
+@Table(name = "meals", uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "date_time"}, name = "meals_unique_user_datetime_idx")})
 public class Meal extends AbstractBaseEntity {
+    public static final String DELETE = "Meal.Delete";
+    public static final String ALL_SORTED = "Meal.AllSorted";
+    public static final String ALL_BETWEEN_TIMES_AND_SORTED = "Meal.AllBetweenTimesAndSorted";
+
+    @Column(name = "date_time")
     private LocalDateTime dateTime;
 
+    @Column(name = "description")
     private String description;
 
+    @Column(name = "calories")
     private int calories;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 
     public Meal() {
