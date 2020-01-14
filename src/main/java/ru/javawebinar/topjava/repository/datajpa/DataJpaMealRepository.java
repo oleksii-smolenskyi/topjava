@@ -2,11 +2,15 @@ package ru.javawebinar.topjava.repository.datajpa;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.repository.MealRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+
+import static ru.javawebinar.topjava.util.DateTimeUtil.getEndExclusive;
+import static ru.javawebinar.topjava.util.DateTimeUtil.getStartInclusive;
 
 @Repository
 public class DataJpaMealRepository implements MealRepository {
@@ -14,28 +18,43 @@ public class DataJpaMealRepository implements MealRepository {
     @Autowired
     private CrudMealRepository crudRepository;
 
+    @Autowired
+    private CrudUserRepository crudUserRepository;
+
     @Override
+    @Transactional
     public Meal save(Meal meal, int userId) {
-        return null;
+        if (!meal.isNew() && get(meal.getId(), userId) == null) {
+            return null;
+        }
+        meal.setUser(crudUserRepository.getOne(userId));
+        if(meal.isNew()) {
+            return crudRepository.save(meal);
+        } else {
+            if (crudRepository.getOne(meal.getId()).getUser().getId().equals(userId))
+                return crudRepository.save(meal);
+            else
+                return null;
+        }
     }
 
     @Override
     public boolean delete(int id, int userId) {
-        return false;
+        return crudRepository.delete(id, userId) != 0;
     }
 
     @Override
     public Meal get(int id, int userId) {
-        return null;
+        return crudRepository.findByIdAndUser(id, userId);
     }
 
     @Override
     public List<Meal> getAll(int userId) {
-        return null;
+        return crudRepository.findAllByUserId(userId);
     }
 
     @Override
     public List<Meal> getBetweenInclusive(LocalDate startDate, LocalDate endDate, int userId) {
-        return null;
+        return crudRepository.findAllByUserIdBAndGetBetween(userId, getStartInclusive(startDate), getEndExclusive(endDate));
     }
 }
